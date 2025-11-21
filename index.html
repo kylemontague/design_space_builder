@@ -653,7 +653,17 @@
         function loadState() {
             const saved = localStorage.getItem('radarChartState');
             if (saved) {
-                state = JSON.parse(saved);
+                const savedState = JSON.parse(saved);
+                // Merge saved state with defaults to handle missing fields
+                state = {
+                    ...state,
+                    ...savedState,
+                    theme: {
+                        ...state.theme,
+                        ...(savedState.theme || {})
+                    }
+                };
+
                 document.getElementById('titleInput').value = state.chartTitle;
                 document.getElementById('descInput').value = state.description;
                 document.getElementById('chartWidth').value = state.theme.width;
@@ -1015,12 +1025,21 @@
             const rect = svg.getBoundingClientRect();
             const scale = 1; // Main view is always scale 1
 
-            // Calculate mouse position relative to SVG center
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            // Calculate coordinate scale (visual pixels vs SVG coordinates)
+            // SVG viewBox width is state.theme.width * scale
+            // Visual width is rect.width
+            const svgWidth = state.theme.width * scale;
+            const svgHeight = state.theme.height * scale;
 
-            const width = state.theme.width * scale;
-            const height = state.theme.height * scale;
+            const scaleX = rect.width / svgWidth;
+            const scaleY = rect.height / svgHeight;
+
+            // Calculate mouse position relative to SVG center in SVG coordinates
+            const mouseX = (e.clientX - rect.left) / scaleX;
+            const mouseY = (e.clientY - rect.top) / scaleY;
+
+            const width = svgWidth;
+            const height = svgHeight;
             const centerX = width / 2;
             const centerY = height / 2;
             const minDim = Math.min(width, height);
@@ -1564,17 +1583,24 @@ ${dim.levels.map(level => `${level.name} & ${level.description || ''} \\\\ \\hli
             reader.onload = (e) => {
                 try {
                     const config = JSON.parse(e.target.result);
+
+                    // Define default theme
+                    const defaultTheme = {
+                        width: 800,
+                        height: 800,
+                        showLevelLabels: true,
+                        showDimensionNames: true,
+                        colorScheme: 'default'
+                    };
+
                     state = {
                         chartTitle: config.chartTitle || 'Design Space',
                         description: config.description || '',
                         dimensions: config.dimensions || [],
                         dataPoints: config.dataPoints || [],
-                        theme: config.theme || {
-                            width: 800,
-                            height: 800,
-                            showLevelLabels: true,
-                            showDimensionNames: true,
-                            colorScheme: 'default'
+                        theme: {
+                            ...defaultTheme,
+                            ...(config.theme || {})
                         }
                     };
                     
@@ -1591,6 +1617,7 @@ ${dim.levels.map(level => `${level.name} & ${level.description || ''} \\\\ \\hli
                     render();
                     alert('Configuration imported successfully!');
                 } catch (error) {
+                    console.error(error);
                     alert('Failed to import configuration. Please check the file format.');
                 }
             };
