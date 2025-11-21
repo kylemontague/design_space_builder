@@ -1057,12 +1057,15 @@
             // We don't save state on every move to avoid thrashing localStorage,
             // but we do render to show the update
             renderChart();
+            // Update sidebar inputs to reflect changes
+            renderDataPoints();
         }
 
         function stopDrag() {
             if (dragging) {
                 dragging = null;
                 saveState(); // Save final position
+                renderDataPoints(); // Ensure sidebar is in sync final state
             }
         }
 
@@ -1100,6 +1103,7 @@
                 dp.values[dimId] = currentLevel;
                 saveState();
                 renderChart();
+                renderDataPoints();
 
                 // Restore focus to the handle
                 // Since re-render destroys DOM elements, we need to re-focus.
@@ -1138,7 +1142,9 @@
 
             const patterns = ['solid', 'horizontal', 'vertical', 'diagonal-right', 'diagonal-left', 'crosshatch', 'dots'];
 
-            const getAngle = (index, total) => (index * 2 * Math.PI) / total - Math.PI / 2;
+            // Add slight rotation offset (15 degrees) to prevent perfectly horizontal lines
+            const rotationOffset = Math.PI / 12;
+            const getAngle = (index, total) => (index * 2 * Math.PI) / total - Math.PI / 2 + rotationOffset;
             const getPoint = (angle, distance) => ({
                 x: centerX + distance * Math.cos(angle),
                 y: centerY + distance * Math.sin(angle)
@@ -1222,7 +1228,29 @@
             });
             svg.appendChild(defs);
 
-            // Draw axes
+            // LAYER 1: Data Polygons (Behind everything)
+            visibleDataPoints.forEach((dp, dpIdx) => {
+                const color = colors[dpIdx % colors.length];
+                const patternType = patterns[dpIdx % patterns.length];
+
+                const points = state.dimensions.map((dim, idx) => {
+                    const angle = getAngle(idx, state.dimensions.length);
+                    const levelValue = dp.values[dim.id] || 0;
+                    const distance = minRadius + (levelValue / (dim.levels.length - 1)) * (maxRadius - minRadius);
+                    return getPoint(angle, distance);
+                });
+
+                const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', pathD);
+                path.setAttribute('fill', patternType === 'solid' ? color : `url(#pattern-${dp.id})`);
+                path.setAttribute('fill-opacity', patternType === 'solid' ? '0.3' : '1');
+                path.setAttribute('stroke', color);
+                path.setAttribute('stroke-width', 2 * scale);
+                svg.appendChild(path);
+            });
+
+            // LAYER 2: Axes, Levels, Labels (On top of polygons)
             state.dimensions.forEach((dim, idx) => {
                 const angle = getAngle(idx, state.dimensions.length);
                 const endPoint = getPoint(angle, maxRadius + axisExtension);
@@ -1274,30 +1302,18 @@
                 }
             });
 
-            // Draw data points
-            visibleDataPoints.forEach((dp, dpIdx) => {
-                const color = colors[dpIdx % colors.length];
-                const patternType = patterns[dpIdx % patterns.length];
-                
-                const points = state.dimensions.map((dim, idx) => {
-                    const angle = getAngle(idx, state.dimensions.length);
-                    const levelValue = dp.values[dim.id] || 0;
-                    const distance = minRadius + (levelValue / (dim.levels.length - 1)) * (maxRadius - minRadius);
-                    return { ...getPoint(angle, distance), dimId: dim.id, levelValue };
-                });
+            // LAYER 3: Drag Handles (On top of everything)
+            if (interactive) {
+                visibleDataPoints.forEach((dp, dpIdx) => {
+                    const color = colors[dpIdx % colors.length];
 
-                // Draw Polygon
-                const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', pathD);
-                path.setAttribute('fill', patternType === 'solid' ? color : `url(#pattern-${dp.id})`);
-                path.setAttribute('fill-opacity', patternType === 'solid' ? '0.3' : '1');
-                path.setAttribute('stroke', color);
-                path.setAttribute('stroke-width', 2 * scale);
-                svg.appendChild(path);
+                    const points = state.dimensions.map((dim, idx) => {
+                        const angle = getAngle(idx, state.dimensions.length);
+                        const levelValue = dp.values[dim.id] || 0;
+                        const distance = minRadius + (levelValue / (dim.levels.length - 1)) * (maxRadius - minRadius);
+                        return { ...getPoint(angle, distance), dimId: dim.id, levelValue };
+                    });
 
-                // Draw Handles (if interactive)
-                if (interactive) {
                     points.forEach((p) => {
                         const dim = state.dimensions.find(d => d.id === p.dimId);
                         if (!dim) return;
@@ -1333,8 +1349,8 @@
 
                         svg.appendChild(handle);
                     });
-                }
-            });
+                });
+            }
 
             container.innerHTML = '';
             container.appendChild(svg);
@@ -1593,6 +1609,50 @@ ${dim.levels.map(level => `${level.name} & ${level.description || ''} \\\\ \\hli
             
             const svgClone = svg.cloneNode(true);
             svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+            // Add Legend to SVG for Export
+            const visibleDataPoints = state.dataPoints.filter(dp => dp.visible);
+            if (visibleDataPoints.length > 0) {
+                const originalHeight = parseInt(svgClone.getAttribute('height'));
+                const originalWidth = parseInt(svgClone.getAttribute('width'));
+                const legendHeight = Math.ceil(visibleDataPoints.length / 2) * 30 + 40; // Estimate height
+                const newHeight = originalHeight + legendHeight;
+
+                svgClone.setAttribute('height', newHeight);
+                svgClone.setAttribute('viewBox', `0 0 ${originalWidth} ${newHeight}`); // Preserve scaling if any
+
+                const legendGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                legendGroup.setAttribute('transform', `translate(0, ${originalHeight})`);
+
+                const colors = colorSchemes[state.theme.colorScheme];
+
+                visibleDataPoints.forEach((dp, idx) => {
+                    const color = colors[idx % colors.length];
+                    const x = (idx % 2) * (originalWidth / 2) + 20; // 2 columns
+                    const y = Math.floor(idx / 2) * 30 + 20;
+
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', x);
+                    rect.setAttribute('y', y);
+                    rect.setAttribute('width', '20');
+                    rect.setAttribute('height', '20');
+                    rect.setAttribute('fill', color);
+                    rect.setAttribute('stroke', color);
+                    rect.setAttribute('rx', '4'); // Rounded corners
+
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', x + 30);
+                    text.setAttribute('y', y + 15); // Vertically centered
+                    text.setAttribute('font-size', '14');
+                    text.setAttribute('fill', '#1e293b');
+                    text.textContent = dp.name;
+
+                    legendGroup.appendChild(rect);
+                    legendGroup.appendChild(text);
+                });
+
+                svgClone.appendChild(legendGroup);
+            }
             
             const serializer = new XMLSerializer();
             const svgString = serializer.serializeToString(svgClone);
