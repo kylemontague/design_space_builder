@@ -1,0 +1,488 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    background: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
+    height: 100vh;
+    padding: 0;
+    overflow: hidden;
+}
+
+.app-layout {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 450px;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.main-view {
+    flex: 1;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: auto;
+    padding: 2rem;
+}
+
+.header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    color: #1e293b;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.header h1:hover {
+    background: #f8fafc;
+}
+
+.header input, .header textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 2px solid #3b82f6;
+    border-radius: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #0f172a;
+}
+
+.header textarea {
+    font-size: 1rem;
+    font-weight: normal;
+    resize: vertical;
+}
+
+.description {
+    color: #475569;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    padding: 0 0.5rem;
+}
+
+.tabs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.tab-button {
+    padding: 1rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+}
+
+.tab-button.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.tab-button:hover {
+    color: #1e293b;
+}
+
+.tab-content {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.btn {
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-secondary {
+    background: #475569; /* Darkened for contrast */
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #334155;
+}
+
+.btn:disabled {
+    background: #94a3b8; /* Darkened for better visibility */
+    cursor: not-allowed;
+}
+
+.card {
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dimension-card, .datapoint-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dimension-header, .datapoint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.5rem;
+}
+
+.dimension-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #0f172a; /* Darker black/slate */
+}
+
+.btn-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    background: none;
+    border: 1px solid transparent; /* Add transparent border for focus */
+    cursor: pointer;
+    border-radius: 0.25rem;
+    color: #475569;
+}
+
+.btn-icon:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.btn-icon:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.btn-icon.danger:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #94a3b8; /* Darker border */
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    color: #0f172a;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-color: #3b82f6;
+}
+
+label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600; /* Bolder */
+    margin-bottom: 0.25rem;
+    color: #334155; /* Darker slate */
+}
+
+.level-item {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.25rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.level-header {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #64748b; /* Darker for contrast */
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.color-scheme {
+    border: 2px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    cursor: pointer;
+    margin-bottom: 1rem;
+}
+
+.color-scheme.active {
+    border-color: #3b82f6;
+}
+
+.color-scheme:hover {
+    border-color: #60a5fa;
+}
+
+.color-swatches {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.color-swatch {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.25rem;
+}
+
+.grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.checkbox-label input {
+    width: auto;
+    margin: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    border: 1px solid #cbd5e1;
+    padding: 0.75rem;
+    text-align: left;
+}
+
+th {
+    background: #f1f5f9;
+    font-weight: 600;
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-swatch {
+    width: 20px;
+    height: 20px;
+    border: 2px solid;
+    border-radius: 0.25rem;
+}
+
+.datapoint-preview {
+    position: relative;
+    display: inline-block;
+}
+
+.datapoint-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #64748b;
+    color: white;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+}
+
+.hidden-item {
+    opacity: 0.5;
+}
+
+.size-presets {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.info-box {
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+#chartView, #chartExport {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+svg {
+    max-width: 100%;
+    height: auto;
+    user-select: none;
+}
+
+.chart-container {
+    width: 100%;
+    max-width: 1000px;
+}
+
+.chart-controls {
+    background: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 1000px;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.toast {
+    background: #334155;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    pointer-events: auto;
+}
+
+.toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.success { background: #10b981; }
+.toast.error { background: #ef4444; }
