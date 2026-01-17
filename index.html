@@ -519,11 +519,11 @@
                         <div class="grid grid-2" style="margin-bottom: 1rem;">
                             <div>
                                 <label>Width (px)</label>
-                                <input type="number" id="chartWidth" min="400" max="1600" step="50" value="800" onchange="saveState(); renderChart()">
+                                <input type="number" id="chartWidth" min="400" max="1600" step="50" value="800" onchange="state.theme.width = parseInt(this.value); saveState(); renderChart()">
                             </div>
                             <div>
                                 <label>Height (px)</label>
-                                <input type="number" id="chartHeight" min="400" max="1600" step="50" value="800" onchange="saveState(); renderChart()">
+                                <input type="number" id="chartHeight" min="400" max="1600" step="50" value="800" onchange="state.theme.height = parseInt(this.value); saveState(); renderChart()">
                             </div>
                         </div>
                         <div class="size-presets">
@@ -537,11 +537,11 @@
 
                         <h2 style="margin-top: 2rem;">Label Visibility</h2>
                         <label class="checkbox-label">
-                            <input type="checkbox" id="showLevelLabels" checked onchange="saveState(); renderChart()">
+                            <input type="checkbox" id="showLevelLabels" checked onchange="state.theme.showLevelLabels = this.checked; saveState(); renderChart()">
                             <span>Show Level Labels</span>
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" id="showDimensionNames" checked onchange="saveState(); renderChart()">
+                            <input type="checkbox" id="showDimensionNames" checked onchange="state.theme.showDimensionNames = this.checked; saveState(); renderChart()">
                             <span>Show Dimension Names</span>
                         </label>
                     </div>
@@ -1141,11 +1141,6 @@
                 container.innerHTML = '<div class="empty-state">Add dimensions to see the chart</div>';
                 return null;
             }
-
-            state.theme.width = parseInt(document.getElementById('chartWidth').value);
-            state.theme.height = parseInt(document.getElementById('chartHeight').value);
-            state.theme.showLevelLabels = document.getElementById('showLevelLabels').checked;
-            state.theme.showDimensionNames = document.getElementById('showDimensionNames').checked;
 
             const width = state.theme.width * scale;
             const height = state.theme.height * scale;
