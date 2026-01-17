@@ -970,7 +970,7 @@
                                     <div style="font-size: 0.875rem; color: #64748b; margin-top: 0.5rem;">
                                         ${state.dimensions.map(dim => {
                                             const level = dim.levels[dp.values[dim.id] || 0];
-                                            return `<div><strong>${dim.name}:</strong> ${level.name}</div>`;
+                                            return `<div><strong>${dim.name}:</strong> <span id="dp-${dp.id}-dim-${dim.id}-val">${level.name}</span></div>`;
                                         }).join('')}
                                     </div>
                                 </div>
@@ -1072,12 +1072,60 @@
             const dp = visibleDataPoints[dragging.dpIdx];
             dp.values[dragging.dimId] = level;
 
-            // Force render
-            // We don't save state on every move to avoid thrashing localStorage,
-            // but we do render to show the update
-            renderChart();
-            // Update sidebar inputs to reflect changes
-            renderDataPoints();
+            // PERFORMANCE OPTIMIZATION
+            // Update only the specific SVG elements and sidebar input instead of full re-render
+
+            // 1. Update the drag handle position
+            const handle = document.querySelector(`circle[data-dp-idx="${dragging.dpIdx}"][data-dim-id="${dragging.dimId}"]`);
+            if (handle) {
+                // Recalculate position for this specific level
+                const angle = (state.dimensions.findIndex(d => d.id === dragging.dimId) * 2 * Math.PI) / state.dimensions.length - Math.PI / 2 + (Math.PI / 12);
+                const distance = minRadius + (level / maxLevel) * (maxRadius - minRadius);
+                const x = centerX + distance * Math.cos(angle);
+                const y = centerY + distance * Math.sin(angle);
+
+                handle.setAttribute('cx', x);
+                handle.setAttribute('cy', y);
+                handle.setAttribute('aria-valuenow', level);
+                handle.setAttribute('aria-valuetext', dim.levels[level].name);
+            }
+
+            // 2. Update the polygon path
+            const path = document.querySelector(`path[data-dp-idx="${dragging.dpIdx}"]`);
+            if (path) {
+                const rotationOffset = Math.PI / 12;
+                const getAngle = (index, total) => (index * 2 * Math.PI) / total - Math.PI / 2 + rotationOffset;
+                const getPoint = (angle, distance) => ({
+                    x: centerX + distance * Math.cos(angle),
+                    y: centerY + distance * Math.sin(angle)
+                });
+
+                const points = state.dimensions.map((d, idx) => {
+                    const angle = getAngle(idx, state.dimensions.length);
+                    const lvl = dp.values[d.id] || 0;
+                    // Recalculate distance for each point
+                    // Note: maxLevel here might be different for each dimension if they had different number of levels,
+                    // but currently they seem to be uniform or we need to access d.levels.length
+                    const dimMaxLevel = d.levels.length - 1;
+                    const dist = minRadius + (lvl / dimMaxLevel) * (maxRadius - minRadius);
+                    return getPoint(angle, dist);
+                });
+
+                const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
+                path.setAttribute('d', pathD);
+            }
+
+            // 3. Update the sidebar input (if in edit mode)
+            const sidebarInput = document.getElementById(`dp-${dp.id}-dim-${dragging.dimId}`);
+            if (sidebarInput) {
+                sidebarInput.value = level;
+            }
+
+            // 4. Update the sidebar text display (if not in edit mode)
+            const sidebarText = document.getElementById(`dp-${dp.id}-dim-${dragging.dimId}-val`);
+            if (sidebarText) {
+                sidebarText.textContent = dim.levels[level].name;
+            }
         }
 
         function stopDrag() {
@@ -1262,6 +1310,7 @@
                 const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('d', pathD);
+                path.setAttribute('data-dp-idx', dpIdx);
                 path.setAttribute('fill', patternType === 'solid' ? color : `url(#pattern-${dp.id})`);
                 path.setAttribute('fill-opacity', patternType === 'solid' ? '0.3' : '1');
                 path.setAttribute('stroke', color);
